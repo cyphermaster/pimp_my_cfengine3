@@ -7,8 +7,9 @@ public version of my work with cfengine
 ## masterfiles
 simple copy of base files.
 ## architectures
-Various class definitions
-association between groups of hosts and bundles/sketches
+* Various class definitions
+* association between groups / contexts
+* service catalog
 ## contexts
 polymorphic configurations used by the policies.
 ## helpers
