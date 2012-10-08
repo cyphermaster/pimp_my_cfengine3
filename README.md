@@ -11,3 +11,6 @@ Various class definitions
 association between groups of hosts and bundles/sketches
 ## contexts
 polymorphic configurations used by the policies.
+## helpers
+tiny scripts used for emulate the behaviour of the User interface
+
