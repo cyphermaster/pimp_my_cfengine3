@@ -1,0 +1,233 @@
+
+#######################################################
+#
+# Site specific promises
+#
+#######################################################
+
+bundle common g
+{
+vars:
+
+  SuSE::
+
+   "crontab" string => "/var/spool/cron/tabs/root";
+
+  redhat::
+
+   "crontab" string => "/var/spool/cron/root";
+
+ (!SuSE).(!redhat)::
+
+   "crontab" string => "/var/spool/cron/crontabs/root";
+
+}
+
+#######################################################
+# Start with cfengine itself
+#######################################################
+
+bundle agent cfengine
+
+{
+classes:
+
+  "integrate_cfengine2" 
+
+      and => { 
+             fileexists("$(sys.workdir)/inputs/cfagent.conf"), 
+             fileexists("$(sys.workdir)/bin/cfagent")
+             };
+
+vars:
+
+   "cf2bits" slist => { "cfenvd", "cfservd", "cfexecd" };
+
+files:
+
+  "$(g.crontab)"
+       comment => "Add cfengine as a cron job, or check for cfengine 2 jobs to replace",
+          create => "true",
+       edit_line => upgrade_cfexecd;
+
+processes:
+
+  exec_fix::
+
+    "cron" signals => { "hup" };
+
+
+}
+
+#######################################################
+# General site issues can be in bundles like this one
+#######################################################
+
+bundle agent site_main
+
+{
+vars:
+
+  "component" slist => { "cf-monitord", "cf-serverd" };
+
+ # - - - - - - - - - - - - - - - - - - - - - - - -
+
+files:
+
+  "$(sys.resolv)"  # test on "/tmp/resolv.conf" #
+
+     comment       => "Edit the resolver file",
+     create        => "true",
+     edit_line     => resolver,
+     edit_defaults => site_def;
+
+  "/etc/hosts"  
+
+     comment       => "main_etc_host",
+     create        => "true",
+     edit_line     => etc_hosts,
+     edit_defaults => site_def;
+
+ # Uncomment this to perform a change-detection scan
+ #  "/usr"         
+ #     changes      => lay_trip_wire,
+ #     depth_search => recurse("inf"),
+ #     action       => measure;
+
+processes:
+
+  "cfenvd"             signals => { "term" };
+
+ # Uncomment this if/when you are ready to upgrade a cf2 server
+ #
+ #  "cfservd"             signals => { "term" };
+ #
+
+ # Now make sure the new parts are running, cf-serverd will fail if
+ # the old server is still running 
+
+  "$(component)" restart_class => canonify("start_$(component)");
+
+ # - - - - - - - - - - - - - - - - - - - - - - - -
+
+commands:
+
+   "$(sys.workdir)/bin/$(component)"
+
+       ifvarclass => canonify("start_$(component)");
+
+}
+
+#######################################################
+# Garbage collection issues
+#######################################################
+
+bundle agent garbage_collection
+{
+files:
+
+  "$(sys.workdir)/outputs" 
+
+    delete => tidy,
+    file_select => days_old("2"),
+    depth_search => recurse("inf");
+
+
+}
+
+#######################################################
+
+bundle edit_line resolver
+
+{
+no_use::
+vars:
+
+ "search" slist => { "search ." };
+
+delete_lines:
+
+  "search.*";
+
+insert_lines:
+
+  "$(search)" location => start;
+}
+
+
+bundle edit_line etc_hosts
+{
+no_use::
+delete_lines:
+  "^.*#++ cf3.*$";
+  "^.*192\.168\.24\..*$";
+
+ insert_lines:
+"192.168.24.1	micro_instance  #++ cf3
+192.168.24.254	router #++ cf3" -> { "site_specific" }
+       comment => "Ensure /etc/hosts has good contents",
+        handle => "maintain_etc_hosts_insert_lines",
+   insert_type => "preserve_block";
+}
+
+###########################################################
+
+body file_select OldCf2Files
+{
+leaf_name => { 
+             "promises.cf", 
+             "site.cf", 
+             "library.cf", 
+             "failsafe.cf", 
+             ".*.txt", 
+             ".*.html", 
+             ".*~",
+             "#.*" 
+             };
+
+file_result => "!leaf_name";
+}
+
+###########################################################
+
+body action measure
+{
+measurement_class => "Detect Changes in /usr";
+ifelapsed => "240";
+expireafter => "240";
+}
+
+
+########################################################
+
+bundle edit_line upgrade_cfexecd
+  {
+  classes:
+
+    "exec_fix" not => regline(".*cf-execd.*","$(edit.filename)");
+
+  insert_lines:
+
+    exec_fix::
+
+      "0,5,10,15,20,25,30,35,40,45,50,55 * * * * /var/cfengine/bin/cf-execd -F";
+
+#  replace_patterns:
+#
+#    "cfexecd" replace_with => value("cf-execd");
+
+  reports:
+
+    exec_fix::
+
+    "Added a 5 minute schedule to crontabs";
+  }
+
+#######################################################
+
+body edit_defaults site_def
+{
+empty_file_before_editing => "false";
+edit_backup => "false";
+max_file_size => "100000";
+}
