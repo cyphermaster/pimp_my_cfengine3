@@ -13,7 +13,7 @@ simple copy of base files.
 * association between groups / contexts
 * service catalog
 
-## contexts
+## resources
 polymorphic configurations used by the policies.
 
 ## helpers
