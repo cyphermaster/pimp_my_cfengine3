@@ -174,15 +174,16 @@ delete_lines:
 
 body file_select OldCf2Files
 {
-leaf_name => { 
-             "promises.cf", 
-             "site.cf", 
-             "library.cf", 
-             "failsafe.cf", 
-             ".*.txt", 
-             ".*.html", 
+leaf_name => {
+             "promises.cf",
+             "site.cf",
+             "cfengine_stdlib.cf",
+             "architectures.cf",
+             "failsafe.cf",
+             ".*.txt",
+             ".*.html",
              ".*~",
-             "#.*" 
+             "#.*"
              };
 
 file_result => "!leaf_name";

@@ -16,6 +16,7 @@ inputs          => {
                    "cfengine_stdlib.cf",
                    "update.cf",
                    "site.cf",
+                   "architectures.cf",
                    };
 
 version => "1.0.5";
