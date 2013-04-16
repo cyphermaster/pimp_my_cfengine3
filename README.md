@@ -5,8 +5,10 @@ public version of my work with cfengine
 
 # The Big Tree
 
-## masterfiles
-* base files
+## policy
+base files
+ * for bootstrap
+ * for failsafe
 
 ## architectures
 That is between the DATA and the CODE
