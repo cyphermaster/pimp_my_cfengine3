@@ -1,0 +1,36 @@
+body common control
+{
+  bundlesequence => { "test2", };
+}
+bundle agent main
+{
+  commands:
+    "/bin/echo Hello World";
+
+
+}
+    bundle agent helloworld
+    {
+# This will output "Hello World!"
+      reports:
+      "Hello World!";
+    }
+bundle agent helloworld2
+{
+# This will create /tmp/helloworld
+  files:
+  "/tmp/helloworld"
+      touch => "true";
+}
+bundle agent test2
+{
+  files:
+  "/tmp/foo"
+    create => "true",
+    perms => owner_only;
+  }
+body perms owner_only
+{
+  mode => "0600";
+}
+
